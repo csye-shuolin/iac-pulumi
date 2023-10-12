@@ -1,0 +1,9 @@
+encryptionsalt: v1:Vt9yDOxafBg=:v1:5B3RU8bAiJXYwvm8:7mFHQ7PK3ka8YyR5c4FS2URj5SeNqA==
+config:
+  aws:profile: shuolin96-csye6225-demo
+  aws:region: us-east-1
+  iac-pulumi:cidrBlock: 10.0.0.0/16
+  iac-pulumi:cidrPrefixLength: "24"
+  iac-pulumi:numOfSubnets: "3"
+  iac-pulumi:prefix: csye6225-demo
+  iac-pulumi:subnetRegion: us-east-1
