@@ -38,6 +38,10 @@ internet_gateway_attachment = aws.ec2.InternetGatewayAttachment(
 # Create numOfSubnets public and private subnets
 public_subnets = []
 private_subnets = []
+azs = aws.get_availability_zones(state="available")
+max_azs = len(azs.names)
+# Don't allow numOfSubnets exceed the max available zone in the current region
+numOfSubnets = min(max_azs, numOfSubnets)
 for i in range(numOfSubnets):
     az = f"{subnetRegion}{chr(97+i)}"  # This will give us '{us-east-1}{a}', '{us-east-1}{b}', '{us-east-1}{c} ....'
     public_subnet = aws.ec2.Subnet(
