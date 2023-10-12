@@ -29,11 +29,11 @@ igw = aws.ec2.InternetGateway(
         "Name": f"{prefix}-igw",
     })
 
-# Attach the internet gateway with the vpc
-internet_gateway_attachment = aws.ec2.InternetGatewayAttachment(
-    f"{prefix}-igw-attachment",
-    internet_gateway_id=igw.id,
-    vpc_id=vpc.id)
+# # Attach the internet gateway with the vpc
+# internet_gateway_attachment = aws.ec2.InternetGatewayAttachment(
+#     f"{prefix}-igw-attachment",
+#     internet_gateway_id=igw.id,
+#     vpc_id=vpc.id)
 
 # Create numOfSubnets public and private subnets
 public_subnets = []
