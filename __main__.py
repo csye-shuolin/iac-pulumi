@@ -34,12 +34,6 @@ igw = aws.ec2.InternetGateway(
         "Name": f"{prefix}-igw",
     })
 
-# # Attach the internet gateway with the vpc
-# internet_gateway_attachment = aws.ec2.InternetGatewayAttachment(
-#     f"{prefix}-igw-attachment",
-#     internet_gateway_id=igw.id,
-#     vpc_id=vpc.id)
-
 # Create numOfSubnets public and private subnets
 public_subnets = []
 private_subnets = []
@@ -158,12 +152,3 @@ ec2_instance = aws.ec2.Instance('app-instance',
 
 # Export the EC2 instance public IP to easily access it after provisioning
 pulumi.export('instance_public_ip', ec2_instance.public_ip)
-
-
-
-
-
-
-
-# # Export the name of the bucket
-# pulumi.export('bucket_name', bucket.id)
