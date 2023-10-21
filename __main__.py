@@ -138,15 +138,8 @@ app_sg = aws.ec2.SecurityGroup('app-sg',
     )]
 )
 
-user_data_script = """#!/bin/bash
-sudo systemctl enable mariadb
-sudo systemctl start mariadb
-cd /home/admin/webapp && node index.js 
-"""
-
 # Launch an EC2 instance in one of the public subnets
 ec2_instance = aws.ec2.Instance('app-instance',
-    user_data=user_data_script,
     instance_type=instanceType,
     ami=sourceAMI,
     key_name=sshName,  
