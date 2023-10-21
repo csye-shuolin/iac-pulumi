@@ -7,7 +7,7 @@ config:
   iac-pulumi:numOfSubnets: "3"
   iac-pulumi:prefix: csye6225-demo
   iac-pulumi:subnetRegion: us-east-1
-  iac-pulumi:sourceAMI: ami-0218b5f82500acbaf
+  iac-pulumi:sourceAMI: ami-0165f05e301c3f69f
   iac-pulumi:instanceType: t2.micro
   iac-pulumi:sshName: wepappSSH
   iac-pulumi:volumeSize: 25
