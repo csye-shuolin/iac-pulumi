@@ -18,6 +18,20 @@ sshName = config.require("sshName")
 volumeSize = config.require("volumeSize")
 volumeType = config.require("volumeType")
 
+# Define user data script
+user_data_script = """#!/bin/bash
+sudo cp /home/admin/webapp/packer/webapp.service lib/systemd/system
+
+sudo mysql -e "CREATE DATABASE IF NOT EXISTS healthz;"
+sudo mysql -e "CREATE USER IF NOT EXISTS 'my_user'@'localhost' IDENTIFIED BY '12345';"
+sudo mysql -e "GRANT ALL PRIVILEGES ON healthz.* TO 'my_user'@'localhost';"
+sudo mysql -e "FLUSH PRIVILEGES;"
+
+sudo systemctl daemon-reload
+sudo systemctl enable webapp
+sudo systemctl start webapp
+"""
+
 # Create a vpc
 vpc = aws.ec2.Vpc(
     f"{prefix}-vpc",
@@ -148,7 +162,8 @@ app_sg = aws.ec2.SecurityGroup('app-sg',
 ec2_instance = aws.ec2.Instance('app-instance',
     instance_type=instanceType,
     ami=sourceAMI,
-    key_name=sshName,  
+    key_name=sshName,
+    user_data=user_data_script,  
     vpc_security_group_ids=[app_sg.id],
     subnet_id=public_subnets[0].id,  # Launch in the first public subnet
     root_block_device=aws.ec2.InstanceRootBlockDeviceArgs(
