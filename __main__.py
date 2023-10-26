@@ -19,18 +19,26 @@ volumeSize = config.require("volumeSize")
 volumeType = config.require("volumeType")
 
 # Define user data script
-user_data_script = """#!/bin/bash
-sudo cp /home/admin/webapp/packer/webapp.service lib/systemd/system
-
-sudo mysql -e "CREATE DATABASE IF NOT EXISTS healthz;"
-sudo mysql -e "CREATE USER IF NOT EXISTS 'my_user'@'localhost' IDENTIFIED BY '12345';"
-sudo mysql -e "GRANT ALL PRIVILEGES ON healthz.* TO 'my_user'@'localhost';"
-sudo mysql -e "FLUSH PRIVILEGES;"
-
+def create_user_data_script(db_endpoint):
+    return db_endpoint.apply(lambda endpoint: f"""#!/bin/bash
+sudo groupadd csye6225
+sudo useradd -s /bin/false -g csye6225 -d /opt/csye6225 -m csye6225
+sudo mv /home/admin/webapp /opt/csye6225
+cd /opt/csye6225/webapp
+cat <<EOL > .env
+DB_NAME=csye6225
+DB_USER=csye6225
+DB_PASSWORD=12345678
+DB_HOST={endpoint.split(":")[0]}
+USER_CSV_PATH=/opt/csye6225/webapp/users.csv
+EOL
+sudo chown -R csye6225:csye6225 /opt/csye6225/webapp
+sudo /usr/bin/node /opt/csye6225/webapp/index.js
+sleep 10
 sudo systemctl daemon-reload
-sudo systemctl enable webapp
-sudo systemctl start webapp
-"""
+sudo systemctl enable webapp.service
+sudo systemctl start webapp.service
+""")
 
 # Create a vpc
 vpc = aws.ec2.Vpc(
@@ -113,8 +121,7 @@ for index, subnet in enumerate(private_subnets):
     )
 
 # Create public route
-aws.ec2.Route(
-    "public-route",
+aws.ec2.Route("public-route",
     route_table_id=public_rt.id,
     destination_cidr_block="0.0.0.0/0",
     gateway_id=igw.id,
@@ -158,12 +165,70 @@ app_sg = aws.ec2.SecurityGroup('app-sg',
     )]
 )
 
+# Create a database security group for EC2
+db_sg = aws.ec2.SecurityGroup('db-security-group',
+    vpc_id=vpc.id,
+    description='Security group for RDS database instances',
+    egress=[aws.ec2.SecurityGroupEgressArgs(
+        from_port=0,
+        to_port=0,
+        protocol="-1",
+        cidr_blocks=["0.0.0.0/0"]
+    )],
+    tags={
+        "Name": "Database Security Group",
+    }
+)
+
+db_ingress = aws.ec2.SecurityGroupRule("db-ingress-rule",
+    type="ingress",
+    from_port=3306,
+    to_port=3306,
+    protocol="tcp",
+    security_group_id=db_sg.id,
+    source_security_group_id=app_sg.id)
+
+# Create a subnet group for the rds instance
+db_subnet_group = aws.rds.SubnetGroup("db-subnet-group",
+    subnet_ids=[subnet.id for subnet in private_subnets]
+)
+
+# Create a parameter group for rds instance
+parameter_group = aws.rds.ParameterGroup("db-parameter-group",
+    family="mariadb10.6",
+    description='Mariadb parameter group',
+    parameters=[
+        aws.rds.ParameterGroupParameterArgs(
+            name="character_set_server",
+            value="utf8",
+        ),
+    ])
+
+# Launch an Database instance in one of the private subnets
+db_instance = aws.rds.Instance("db-instance",
+    instance_class="db.t3.micro",
+    allocated_storage=20,
+    engine="mariadb",
+    engine_version="10.6.14",
+    storage_type="gp2",
+    db_name="csye6225",
+    username="csye6225",
+    password="12345678",
+    multi_az=False,
+    publicly_accessible=False,
+    vpc_security_group_ids=[db_sg.id],
+    db_subnet_group_name=db_subnet_group.name,
+    parameter_group_name=parameter_group.name,
+    skip_final_snapshot=True,
+    tags={"Name": "db-instance"}
+)
+
 # Launch an EC2 instance in one of the public subnets
 ec2_instance = aws.ec2.Instance('app-instance',
     instance_type=instanceType,
     ami=sourceAMI,
     key_name=sshName,
-    user_data=user_data_script,  
+    user_data=create_user_data_script(db_instance.endpoint),  
     vpc_security_group_ids=[app_sg.id],
     subnet_id=public_subnets[0].id,  # Launch in the first public subnet
     root_block_device=aws.ec2.InstanceRootBlockDeviceArgs(
@@ -176,6 +241,9 @@ ec2_instance = aws.ec2.Instance('app-instance',
         "Name": "Webapp Instance",
     }
 )
+
+# Export the RDS instance endpoint
+pulumi.export('db_instance_endpoint', db_instance.endpoint)
 
 # Export the EC2 instance public IP to easily access it after provisioning
 pulumi.export('instance_public_ip', ec2_instance.public_ip)
