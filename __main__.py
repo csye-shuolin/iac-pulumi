@@ -18,6 +18,10 @@ instanceType = config.require("instanceType")
 sshName = config.require("sshName")
 volumeSize = config.require("volumeSize")
 volumeType = config.require("volumeType")
+dbName = config.require("dbName")
+dbUser = config.require("dbUser")
+dbPassword = config.require("dbPassword")
+hostZone = config.require("hostZone")
 
 # Define user data script
 def create_user_data_script(db_endpoint):
@@ -215,9 +219,9 @@ db_instance = aws.rds.Instance("db-instance",
     engine="mariadb",
     engine_version="10.6.14",
     storage_type="gp2",
-    db_name="csye6225",
-    username="csye6225",
-    password="12345678",
+    db_name=dbName,
+    username=dbUser,
+    password=dbPassword,
     multi_az=False,
     publicly_accessible=False,
     vpc_security_group_ids=[db_sg.id],
@@ -276,12 +280,12 @@ ec2_instance = aws.ec2.Instance('app-instance',
 )
 
 # Fetch the host zone dev.shuolin.me
-zone = aws.route53.get_zone(name="dev.shuolin.me")
+zone = aws.route53.get_zone(name=hostZone)
 
 # Add or Update A record to Route53 zone
 A_record = aws.route53.Record("zone-record",
     zone_id=zone.zone_id,
-    name="dev.shuolin.me",
+    name=hostZone,
     type="A",
     ttl=300,
     records=[ec2_instance.public_ip])
