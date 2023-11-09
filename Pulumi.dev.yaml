@@ -7,9 +7,13 @@ config:
   iac-pulumi:numOfSubnets: "3"
   iac-pulumi:prefix: csye6225-dev
   iac-pulumi:subnetRegion: us-east-1
-  iac-pulumi:sourceAMI: ami-0431b07064b900f08
+  iac-pulumi:sourceAMI: ami-03a5a61ba0b530842
   iac-pulumi:instanceType: t2.micro
   iac-pulumi:sshName: wepappSSH
   iac-pulumi:volumeSize: 25
   iac-pulumi:volumeType: gp2
+  iac-pulumi:dbName: "csye6225"
+  iac-pulumi:dbUser: "csye6225"
+  iac-pulumi:dbPassword: "12345678"
+  iac-pulumi:hostZone: "dev.shuolin.me"
 
