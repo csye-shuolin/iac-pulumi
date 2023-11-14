@@ -1,13 +1,13 @@
 encryptionsalt: v1:Vt9yDOxafBg=:v1:5B3RU8bAiJXYwvm8:7mFHQ7PK3ka8YyR5c4FS2URj5SeNqA==
 config:
-  aws:profile: shuolin96-csye6225-dev
+  aws:profile: shuolin96-csye6225-demo
   aws:region: us-east-1
   iac-pulumi:cidrBlock: 10.0.0.0/16
   iac-pulumi:cidrPrefixLength: "24"
   iac-pulumi:numOfSubnets: "3"
   iac-pulumi:prefix: csye6225-dev
   iac-pulumi:subnetRegion: us-east-1
-  iac-pulumi:sourceAMI: ami-05f9337bf99a1fcdd
+  iac-pulumi:sourceAMI: ami-05d0fb4da72c7ac95
   iac-pulumi:instanceType: t2.micro
   iac-pulumi:sshName: webappSSH
   iac-pulumi:volumeSize: 25
@@ -15,5 +15,5 @@ config:
   iac-pulumi:dbName: "csye6225"
   iac-pulumi:dbUser: "csye6225"
   iac-pulumi:dbPassword: "12345678"
-  iac-pulumi:hostZone: "dev.shuolin.me"
+  iac-pulumi:hostZone: "demo.shuolin.me"
 
