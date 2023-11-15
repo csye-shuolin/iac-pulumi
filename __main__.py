@@ -178,7 +178,8 @@ app_sg_ingress_ssh = aws.ec2.SecurityGroupRule("app-ingress-ssh",
     from_port=22,
     to_port=22,
     protocol="tcp",
-    security_group_id=app_sg.id
+    security_group_id=app_sg.id,
+    source_security_group_id=app_sg.id
     )
 
 app_sg_ingress_app_port = aws.ec2.SecurityGroupRule("app-sg-ingress-app-port",
@@ -312,7 +313,7 @@ auto_scaling_group = aws.autoscaling.Group("app-auto-scaling-group",
 scale_up_policy = aws.autoscaling.Policy("scale-up-policy",
     scaling_adjustment=1,
     adjustment_type="ChangeInCapacity",
-    cooldown=120,
+    cooldown=60,
     autoscaling_group_name=auto_scaling_group.name,
     metric_aggregation_type="Average",
     policy_type="SimpleScaling"
@@ -336,7 +337,7 @@ scale_up_alarm = aws.cloudwatch.MetricAlarm("scale-up-alarm",
 scale_down_policy = aws.autoscaling.Policy("scale-down-policy",
     scaling_adjustment=-1,
     adjustment_type="ChangeInCapacity",
-    cooldown=120,
+    cooldown=60,
     autoscaling_group_name=auto_scaling_group.name,
     metric_aggregation_type="Average",
     policy_type="SimpleScaling"
