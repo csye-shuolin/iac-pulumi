@@ -24,8 +24,13 @@ dbUser = config.require("dbUser")
 dbPassword = config.require("dbPassword")
 hostZone = config.require("hostZone")
 
+# Create an AWS resource (SNS Topic)
+sns_topic = aws.sns.Topic('myTopic')
+
+pulumi.export('sns topic arn', sns_topic.arn)
+
 # Define user data script
-def create_user_data_script(endpoint):
+def create_user_data_script(endpoint, topic_arn):
     return f"""#!/bin/bash
 sudo groupadd csye6225
 sudo useradd -s /bin/false -g csye6225 -d /opt/csye6225 -m csye6225
@@ -37,6 +42,7 @@ DB_USER=csye6225
 DB_PASSWORD=12345678
 DB_HOST={endpoint.split(":")[0]}
 USER_CSV_PATH=/opt/csye6225/webapp/users.csv
+TOPIC_ARN={topic_arn}
 EOL
 sudo chown -R csye6225:csye6225 /opt/csye6225/webapp
 sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/opt/cloudwatch-config.json
@@ -165,30 +171,26 @@ load_balancer_sg = aws.ec2.SecurityGroup('load-balancer-sg',
 app_sg = aws.ec2.SecurityGroup('app-sg',
     vpc_id=vpc.id,
     description='Allow on port 22',
+    ingress=[
+        aws.ec2.SecurityGroupIngressArgs(
+            protocol='tcp',
+            from_port=22,
+            to_port=22,
+            cidr_blocks=["0.0.0.0/0"]
+        ),
+        aws.ec2.SecurityGroupIngressArgs(
+            protocol="tcp",
+            from_port=8080,
+            to_port=8080,
+            security_groups=[load_balancer_sg.id]
+        ),
+    ],
     egress=[aws.ec2.SecurityGroupEgressArgs(
         from_port=0,
         to_port=0,
         protocol="-1",
         cidr_blocks=["0.0.0.0/0"]
     )]
-)
-
-app_sg_ingress_ssh = aws.ec2.SecurityGroupRule("app-ingress-ssh",
-    type="ingress",
-    from_port=22,
-    to_port=22,
-    protocol="tcp",
-    security_group_id=app_sg.id,
-    source_security_group_id=app_sg.id
-    )
-
-app_sg_ingress_app_port = aws.ec2.SecurityGroupRule("app-sg-ingress-app-port",
-    type="ingress",
-    from_port=8080,
-    to_port=8080,
-    protocol="tcp",
-    security_group_id=app_sg.id,
-    source_security_group_id=load_balancer_sg.id
 )
 
 # Create a database security group
@@ -247,7 +249,7 @@ db_instance = aws.rds.Instance("db-instance",
 )
 
 # Create IAM role for use with CloudAgent
-cloud_watch_role = aws.iam.Role("CloudWatchAgentServerRole",
+iam_role = aws.iam.Role("iam_role",
     assume_role_policy=json.dumps({
     "Version": "2012-10-17",
     "Statement": [
@@ -265,14 +267,19 @@ cloud_watch_role = aws.iam.Role("CloudWatchAgentServerRole",
     ]
 }))
 
-# Attach policy to role
+# Attach cloud_watch policy to iam role
 cloud_watch_role_policy_attachment = aws.iam.RolePolicyAttachment("cloud-watch-role-policy-attachment",
-    role=cloud_watch_role.name,
+    role=iam_role.name,
     policy_arn="arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy")
 
+# Attach Amazon SNS Full Access policy to the role
+sns_full_access_policy_attachment = aws.iam.RolePolicyAttachment("sns-full-access-policy-attachment",
+    role=iam_role.name,
+    policy_arn="arn:aws:iam::aws:policy/AmazonSNSFullAccess")
+
 # Create IAM instance profile for attaching role to EC2
-cloud_watch_instance_profile = aws.iam.InstanceProfile("cloud-watch-instance-profile",
-    role=cloud_watch_role.name)
+iam_instance_profile = aws.iam.InstanceProfile("iam-instance-profile",
+    role=iam_role.name)
 
 # The Auto Scaling Application Stack
 # Create the launch template
@@ -281,9 +288,11 @@ launch_template = aws.ec2.LaunchTemplate("app-launch-template",
     instance_type=instanceType,
     key_name=sshName,
     disable_api_termination=False,
-    user_data=db_instance.endpoint.apply(lambda endpoint: base64.b64encode(create_user_data_script(endpoint).encode('utf-8')).decode('utf-8')),
+    user_data=pulumi.Output.all(db_instance.endpoint, sns_topic.arn).apply(
+        lambda args: base64.b64encode(create_user_data_script(args[0], args[1]).encode('utf-8')).decode('utf-8')
+    ),
     iam_instance_profile=aws.ec2.LaunchTemplateIamInstanceProfileArgs(
-        name=cloud_watch_instance_profile.name,
+        name=iam_instance_profile.name,
     ), 
     network_interfaces=[aws.ec2.LaunchTemplateNetworkInterfaceArgs(
         associate_public_ip_address="true",
@@ -297,7 +306,7 @@ auto_scaling_group = aws.autoscaling.Group("app-auto-scaling-group",
         id=launch_template.id,
         version="$Latest",
     ),
-    vpc_zone_identifiers=[subnet.id for subnet in private_subnets], 
+    vpc_zone_identifiers=[subnet.id for subnet in public_subnets], 
     min_size=1,
     max_size=3,
     desired_capacity=1,
