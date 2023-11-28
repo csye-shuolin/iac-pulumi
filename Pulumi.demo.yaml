@@ -7,7 +7,7 @@ config:
   iac-pulumi:numOfSubnets: "3"
   iac-pulumi:prefix: csye6225-dev
   iac-pulumi:subnetRegion: us-east-1
-  iac-pulumi:sourceAMI: ami-05d0fb4da72c7ac95
+  iac-pulumi:sourceAMI: ami-02f1f77a85e2a12c9
   iac-pulumi:instanceType: t2.micro
   iac-pulumi:sshName: webappSSH
   iac-pulumi:volumeSize: 25
