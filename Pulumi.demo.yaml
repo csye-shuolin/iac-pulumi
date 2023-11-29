@@ -2,18 +2,23 @@ encryptionsalt: v1:Vt9yDOxafBg=:v1:5B3RU8bAiJXYwvm8:7mFHQ7PK3ka8YyR5c4FS2URj5SeN
 config:
   aws:profile: shuolin96-csye6225-demo
   aws:region: us-east-1
+  gcp:project: csye6225-shuolin-demo
+  iac-pulumi:accountID: csye6225-demo-service-account
+  iac-pulumi:accountName: CSYE6225 Demo Service Account
   iac-pulumi:cidrBlock: 10.0.0.0/16
   iac-pulumi:cidrPrefixLength: "24"
+  iac-pulumi:dbName: "csye6225"
+  iac-pulumi:dbPassword: "12345678"
+  iac-pulumi:dbUser: "csye6225"
+  iac-pulumi:hostZone: "demo.shuolin.me"
+  iac-pulumi:instanceType: t2.micro
   iac-pulumi:numOfSubnets: "3"
   iac-pulumi:prefix: csye6225-dev
-  iac-pulumi:subnetRegion: us-east-1
-  iac-pulumi:sourceAMI: ami-02f1f77a85e2a12c9
-  iac-pulumi:instanceType: t2.micro
+  iac-pulumi:project_id: csye6225-shuolin-demo
+  iac-pulumi:projectID: csye6225-shuolin-demo
+  iac-pulumi:sourceAMI: ami-090a6b2bebc443632
   iac-pulumi:sshName: webappSSH
-  iac-pulumi:volumeSize: 25
+  iac-pulumi:subnetRegion: us-east-1
+  iac-pulumi:volumeSize: "25"
   iac-pulumi:volumeType: gp2
-  iac-pulumi:dbName: "csye6225"
-  iac-pulumi:dbUser: "csye6225"
-  iac-pulumi:dbPassword: "12345678"
-  iac-pulumi:hostZone: "demo.shuolin.me"
-
+  iac-pulumi:gcs_bucket_name: csye6225-shuolin-bucket
