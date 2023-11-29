@@ -4,6 +4,7 @@ import base64
 import pulumi
 import json
 import pulumi_aws as aws
+import pulumi_gcp as gcp
 
 config = pulumi.Config()
 
@@ -23,11 +24,86 @@ dbName = config.require("dbName")
 dbUser = config.require("dbUser")
 dbPassword = config.require("dbPassword")
 hostZone = config.require("hostZone")
+gcs_bucket_name = config.require("gcs_bucket_name")
+
+##########################################################################################
+##########################################################################################
+
+accountID = config.require("accountID")
+accountName = config.require("accountName")
+projectID = config.require("projectID")
+
+# Create a Google Service Account
+service_account = gcp.serviceaccount.Account("my-service-account",
+    account_id=accountID,
+    display_name=accountName)
+
+# Attach Storage Object User Role to the Service Account
+storage_object_user_binding = gcp.projects.IAMMember("storage-object-user-binding",
+    project=projectID,
+    role="roles/storage.objectUser",
+    member=pulumi.Output.concat("serviceAccount:", service_account.email))
+
+# Access Keys for the Google Service Account
+service_account_key = gcp.serviceaccount.Key("my-service-account-key",
+    service_account_id=service_account.name)
+
+# IAM role for the Lambda function
+lambda_role = aws.iam.Role("lambdaRole",
+    assume_role_policy=json.dumps({
+        "Version": "2012-10-17",
+        "Statement": [{
+            "Effect": "Allow",
+            "Principal": {"Service": "lambda.amazonaws.com"},
+            "Action": "sts:AssumeRole"
+        }]
+    }))
+
+# Attach the policy to the role
+aws.iam.RolePolicyAttachment("lambdaPolicyAttachmentt",
+    role=lambda_role.name,
+    policy_arn="arn:aws:iam::aws:policy/AmazonSNSFullAccess")
+
+aws.iam.RolePolicyAttachment("cloud-watch_policy_attachment",
+    role=lambda_role.name,
+    policy_arn="arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole")
+
+# Assuming your Lambda code is zipped in 'lambda_function.zip'
+lambda_function = aws.lambda_.Function("myLambdaFunction",
+    role=lambda_role.arn,
+    runtime="nodejs18.x",  
+    handler="lambda_function.handler",  # format: file.method
+    code=pulumi.FileArchive("/Users/shuolinhu/workspace/csye6225/serverless/lambda_function/lambda_function.zip"),
+    environment=aws.lambda_.FunctionEnvironmentArgs(
+        variables={
+            "GCS_BUCKET_NAME": gcs_bucket_name,
+            "GCP_SERVICE_ACCOUNT_KEY_JSON": service_account_key.private_key.apply(
+                lambda key: base64.b64decode(key).decode('utf-8') if key else ''
+            )
+        }) 
+    )
 
 # Create an AWS resource (SNS Topic)
 sns_topic = aws.sns.Topic('myTopic')
 
+# Configure SNS Topic to Trigger Lambda
+sns_topic_subscription = aws.sns.TopicSubscription("myTopicSubscription",
+    topic=sns_topic.arn,
+    protocol="lambda",
+    endpoint=lambda_function.arn)
+
+# Add Lambda permission for SNS to invoke it
+lambda_invoke_permission = aws.lambda_.Permission("snsInvokePermission",
+    action="lambda:InvokeFunction",
+    function=lambda_function.name,
+    principal="sns.amazonaws.com",
+    source_arn=sns_topic.arn)
+
+
 pulumi.export('sns topic arn', sns_topic.arn)
+
+##########################################################################################
+##########################################################################################
 
 # Define user data script
 def create_user_data_script(endpoint, topic_arn):
