@@ -32,6 +32,8 @@ gcs_bucket_name = config.require("gcs_bucket_name")
 accountID = config.require("accountID")
 accountName = config.require("accountName")
 projectID = config.require("projectID")
+mailgunApi = config.require("mailgunApi")
+mailgunDomain = config.require("mailgunDomain")
 
 # Create a Google Service Account
 service_account = gcp.serviceaccount.Account("my-service-account",
@@ -79,7 +81,9 @@ lambda_function = aws.lambda_.Function("myLambdaFunction",
             "GCS_BUCKET_NAME": gcs_bucket_name,
             "GCP_SERVICE_ACCOUNT_KEY_JSON": service_account_key.private_key.apply(
                 lambda key: base64.b64decode(key).decode('utf-8') if key else ''
-            )
+            ),
+            "MAILGUN_API_KEY": mailgunApi,
+            "MAILGUN_DOMAIN": mailgunDomain
         }) 
     )
 

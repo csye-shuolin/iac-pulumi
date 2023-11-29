@@ -16,9 +16,11 @@ config:
   iac-pulumi:prefix: csye6225-dev
   iac-pulumi:project_id: csye6225-shuolin-demo
   iac-pulumi:projectID: csye6225-shuolin-demo
-  iac-pulumi:sourceAMI: ami-090a6b2bebc443632
+  iac-pulumi:sourceAMI: ami-0219f4c7dfdb59d4a
   iac-pulumi:sshName: webappSSH
   iac-pulumi:subnetRegion: us-east-1
   iac-pulumi:volumeSize: "25"
   iac-pulumi:volumeType: gp2
   iac-pulumi:gcs_bucket_name: csye6225-shuolin-bucket
+  iac-pulumi:mailgunApi: e8b34d6d40c79644d2b6c7f15fe9ae85-30b58138-1a1673b7
+  iac-pulumi:mailgunDomain: demo.shuolin.me
