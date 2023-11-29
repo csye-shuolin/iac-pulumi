@@ -70,11 +70,28 @@ aws.iam.RolePolicyAttachment("cloud-watch_policy_attachment",
     role=lambda_role.name,
     policy_arn="arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole")
 
+aws.iam.RolePolicyAttachment("dynamodb_policy_attachment",
+    role=lambda_role.name,
+    policy_arn="arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess")
+
+# Create a DynamoDB table
+email_delivery_table = aws.dynamodb.Table("emailDeliveryTable",
+    attributes=[
+        aws.dynamodb.TableAttributeArgs(
+            name="submissionId",
+            type="S",
+        ),
+    ],
+    hash_key="submissionId",
+    billing_mode="PAY_PER_REQUEST"
+)
+
 # Assuming your Lambda code is zipped in 'lambda_function.zip'
 lambda_function = aws.lambda_.Function("myLambdaFunction",
     role=lambda_role.arn,
     runtime="nodejs18.x",  
-    handler="lambda_function.handler",  # format: file.method
+    handler="lambda_function.handler",
+    timeout=60,
     code=pulumi.FileArchive("/Users/shuolinhu/workspace/csye6225/serverless/lambda_function/lambda_function.zip"),
     environment=aws.lambda_.FunctionEnvironmentArgs(
         variables={
@@ -83,7 +100,8 @@ lambda_function = aws.lambda_.Function("myLambdaFunction",
                 lambda key: base64.b64decode(key).decode('utf-8') if key else ''
             ),
             "MAILGUN_API_KEY": mailgunApi,
-            "MAILGUN_DOMAIN": mailgunDomain
+            "MAILGUN_DOMAIN": mailgunDomain,
+            "EMAIL_DELIVERY_TABLE_NAME": email_delivery_table.name
         }) 
     )
 
