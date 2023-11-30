@@ -16,7 +16,7 @@ config:
   iac-pulumi:prefix: csye6225-dev
   iac-pulumi:project_id: csye6225-shuolin-demo
   iac-pulumi:projectID: csye6225-shuolin-demo
-  iac-pulumi:sourceAMI: ami-0219f4c7dfdb59d4a
+  iac-pulumi:sourceAMI: ami-0e8cb17d9592cc85e
   iac-pulumi:sshName: webappSSH
   iac-pulumi:subnetRegion: us-east-1
   iac-pulumi:volumeSize: "25"

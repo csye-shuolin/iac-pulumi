@@ -92,7 +92,7 @@ lambda_function = aws.lambda_.Function("myLambdaFunction",
     runtime="nodejs18.x",  
     handler="lambda_function.handler",
     timeout=60,
-    code=pulumi.FileArchive("/Users/shuolinhu/workspace/csye6225/serverless/lambda_function/lambda_function.zip"),
+    code=pulumi.FileArchive("/Users/shuolinhu/workspace/csye6225/serverless/lambda_function.zip"),
     environment=aws.lambda_.FunctionEnvironmentArgs(
         variables={
             "GCS_BUCKET_NAME": gcs_bucket_name,
