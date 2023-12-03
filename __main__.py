@@ -25,6 +25,7 @@ dbUser = config.require("dbUser")
 dbPassword = config.require("dbPassword")
 hostZone = config.require("hostZone")
 gcs_bucket_name = config.require("gcs_bucket_name")
+lambdaPath = config.require("lambdaPath")
 
 ##########################################################################################
 ##########################################################################################
@@ -62,15 +63,15 @@ lambda_role = aws.iam.Role("lambdaRole",
     }))
 
 # Attach the policy to the role
-aws.iam.RolePolicyAttachment("lambdaPolicyAttachmentt",
+aws.iam.RolePolicyAttachment("sns-lambda-attachment",
     role=lambda_role.name,
     policy_arn="arn:aws:iam::aws:policy/AmazonSNSFullAccess")
 
-aws.iam.RolePolicyAttachment("cloud-watch_policy_attachment",
+aws.iam.RolePolicyAttachment("cloudwatch-lambda-attachment",
     role=lambda_role.name,
     policy_arn="arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole")
 
-aws.iam.RolePolicyAttachment("dynamodb_policy_attachment",
+aws.iam.RolePolicyAttachment("dynamodb-lambda-attachment",
     role=lambda_role.name,
     policy_arn="arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess")
 
@@ -92,7 +93,7 @@ lambda_function = aws.lambda_.Function("myLambdaFunction",
     runtime="nodejs18.x",  
     handler="lambda_function.handler",
     timeout=60,
-    code=pulumi.FileArchive("/Users/shuolinhu/workspace/csye6225/serverless/lambda_function/lambda_function.zip"),
+    code=pulumi.FileArchive(lambdaPath),
     environment=aws.lambda_.FunctionEnvironmentArgs(
         variables={
             "GCS_BUCKET_NAME": gcs_bucket_name,
