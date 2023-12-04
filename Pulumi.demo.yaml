@@ -25,3 +25,4 @@ config:
   iac-pulumi:mailgunApi: e8b34d6d40c79644d2b6c7f15fe9ae85-30b58138-1a1673b7
   iac-pulumi:mailgunDomain: demo.shuolin.me
   iac-pulumi:lambdaPath: /Users/shuolinhu/workspace/csye6225/serverless/lambda_function.zip
+  iac-pulumi:certificateArn: arn:aws:acm:us-east-1:903499155426:certificate/32249375-b12f-4e26-8295-96afeb4d2017
