@@ -35,6 +35,7 @@ accountName = config.require("accountName")
 projectID = config.require("projectID")
 mailgunApi = config.require("mailgunApi")
 mailgunDomain = config.require("mailgunDomain")
+certificateArn = config.require("certificateArn")
 
 # Create a Google Service Account
 service_account = gcp.serviceaccount.Account("my-service-account",
@@ -272,12 +273,6 @@ app_sg = aws.ec2.SecurityGroup('app-sg',
     description='Allow on port 22',
     ingress=[
         aws.ec2.SecurityGroupIngressArgs(
-            protocol='tcp',
-            from_port=22,
-            to_port=22,
-            cidr_blocks=["0.0.0.0/0"]
-        ),
-        aws.ec2.SecurityGroupIngressArgs(
             protocol="tcp",
             from_port=8080,
             to_port=8080,
@@ -499,8 +494,10 @@ app_target_group = aws.lb.TargetGroup("appTargetGroup",
 # Create a listener
 app_listener = aws.lb.Listener("appListener",
     load_balancer_arn=app_load_balancer.arn,
-    port=80,
-    protocol="HTTP",
+    port=443,
+    protocol="HTTPS",
+    ssl_policy="ELBSecurityPolicy-2016-08",
+    certificate_arn=certificateArn,
     default_actions=[{
         "type": "forward",
         "target_group_arn": app_target_group.arn
